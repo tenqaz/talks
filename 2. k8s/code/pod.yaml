@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    owner: chrono
+    env: demo
+    region: north
+    tier: back
+    
+spec:
+  containers:
+  - image: nginx:latest
+    name: nginx
+
