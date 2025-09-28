@@ -1,32 +1,38 @@
 package main
 
 import (
+	"runtime"
 	"sync"
 	"testing"
 )
 
-type Item struct {
-	A, B, C int
+type Data struct {
+	Values [1024]int
 }
 
-var itemPool = sync.Pool{
-	New: func() interface{} {
-		return &Item{}
+func BenchmarkWithoutPooling(b *testing.B) {
+	var dummy *Data
+	for range b.N {
+		data := &Data{}
+		data.Values[0] = 42
+		dummy = data
+	}
+	runtime.KeepAlive(dummy)
+}
+
+var dataPool = sync.Pool{
+	New: func() any {
+		return &Data{}
 	},
 }
 
-func BenchmarkWithoutPool(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		item := &Item{A: 1, B: 2, C: 3}
-		_ = item.A + item.B + item.C
+func BenchmarkWithPooling(b *testing.B) {
+	var dummy *Data
+	for range b.N {
+		obj := dataPool.Get().(*Data)
+		obj.Values[0] = 42
+		dummy = obj
+		dataPool.Put(obj)
 	}
-}
-
-func BenchmarkWithPool(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		item := itemPool.Get().(*Item)
-		item.A, item.B, item.C = 1, 2, 3 // 重置
-		_ = item.A + item.B + item.C
-		itemPool.Put(item)
-	}
+	runtime.KeepAlive(dummy)
 }
